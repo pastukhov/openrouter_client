@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.0%2B-blue)](https://idf.espressif.com/)
-[![Version](https://img.shields.io/badge/Version-1.0.1-green)](https://github.com/nikhil-robinson/openrouter-esp-idf)
+[![Version](https://img.shields.io/badge/Version-1.0.1-green)](https://github.com/nikhil-robinson/openrouter_client)
 
 A comprehensive OpenRouter API client library for ESP32 microcontrollers using ESP-IDF. This library enables seamless integration with OpenRouter's AI models, supporting text generation, streaming responses, function calling, and multimodal capabilities (image and audio processing).
 
@@ -41,8 +41,8 @@ Add this component to your ESP-IDF project using the component manager:
 ```yaml
 # idf_component.yml
 dependencies:
-  openrouter-esp-idf:
-    git: https://github.com/nikhil-robinson/openrouter-esp-idf.git
+  openrouter_client:
+    git: https://github.com/nikhil-robinson/openrouter_client.git
     version: "^1.0.0"
 ```
 
@@ -50,7 +50,7 @@ Or clone directly into your components directory:
 
 ```bash
 cd components
-git clone https://github.com/nikhil-robinson/openrouter-esp-idf.git
+git clone https://github.com/nikhil-robinson/openrouter_client.git
 ```
 
 ### 2. Basic Configuration
@@ -366,8 +366,8 @@ We welcome contributions! Please:
 ### Development Setup
 
 ```bash
-git clone https://github.com/nikhil-robinson/openrouter-esp-idf.git
-cd openrouter-esp-idf
+git clone https://github.com/nikhil-robinson/openrouter_client.git
+cd openrouter_client
 # Make your changes
 # Test with examples
 ```
@@ -384,7 +384,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/nikhil-robinson/openrouter-esp-idf/issues)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/nikhil-robinson/openrouter_client/issues)
 - 📖 **Documentation**: [OpenRouter API Docs](https://openrouter.ai/docs)
 - 💬 **Community**: [ESP32 Forums](https://esp32.com/)
 

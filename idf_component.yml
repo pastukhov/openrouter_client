@@ -1,8 +1,8 @@
 version: "1.0.1"
 description: OpenRouter library compatible with ESP-IDF
-url: https://github.com/nikhil-robinson/openrouter-esp-idf
-repository: https://github.com/nikhil-robinson/openrouter-esp-idf.git
-issues: https://github.com/nikhil-robinson/openrouter-esp-idf/issues
+url: https://github.com/nikhil-robinson/openrouter_client
+repository: https://github.com/nikhil-robinson/openrouter_client.git
+issues: https://github.com/nikhil-robinson/openrouter_client/issues
 dependencies:
   ## Required IDF version
   idf:

@@ -431,8 +431,8 @@ examples/your_example/
 
 ## 📞 Support
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/nikhil-robinson/openrouter-esp-idf/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/nikhil-robinson/openrouter-esp-idf/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/nikhil-robinson/openrouter_client/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/nikhil-robinson/openrouter_client/discussions)
 - 📖 **Documentation**: [Component README](../README.md)
 - 🔗 **API Reference**: [OpenRouter Docs](https://openrouter.ai/docs)
 
