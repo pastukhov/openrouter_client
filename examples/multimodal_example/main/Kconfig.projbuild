@@ -1,0 +1,21 @@
+menu "WiFi & API Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            The SSID of the WiFi network to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "password"
+        help
+            The password of the WiFi network to connect to.
+
+    config API_KEY
+        string "API Key"
+        default "sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        help
+            The API key used for authentication.
+
+endmenu

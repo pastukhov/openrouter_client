@@ -1,0 +1,9 @@
+version: "1.0.1"
+description: OpenRouter library compatible with ESP-IDF
+url: https://github.com/nikhil-robinson/openrouter-esp-idf
+repository: https://github.com/nikhil-robinson/openrouter-esp-idf.git
+issues: https://github.com/nikhil-robinson/openrouter-esp-idf/issues
+dependencies:
+  ## Required IDF version
+  idf:
+    version: ">=5.0"

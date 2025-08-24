@@ -1,0 +1,9 @@
+build
+.vscode
+.env
+sdkconfig
+sdkconfig.old
+managed_components
+.clangd
+dependencies.lock
+.clang-format
