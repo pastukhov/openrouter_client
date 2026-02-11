@@ -9,12 +9,13 @@ Bring the power of modern AI to your ESP32 projects! This library transforms you
 ## ✨ Key Features
 
 - 🚀 **Complete OpenRouter Integration** - Full chat completions API support
-- 📡 **Real-time Streaming** - Token-by-token responses for interactive applications  
+- 📡 **Real-time Streaming** - Token-by-token responses for interactive applications
 - 🔧 **AI Function Calling** - Let AI models invoke your custom ESP32 functions
 - 🖼️ **Multimodal Processing** - Handle images and audio alongside text
 - ⚙️ **ESP32 Optimized** - Memory-efficient design for microcontroller constraints
 - 🔒 **Enterprise Security** - TLS/SSL with certificate validation
-- � **70+ AI Models** - Access to GPT-4, Claude, Gemini, Llama and more
+- 🤖 **70+ AI Models** - Access to GPT-4, Claude, Gemini, Llama and more
+- 🏠 **ESPHome Integration** - Native component for Home Assistant smart homes
 
 ## 🎯 Quick Start
 
@@ -81,6 +82,7 @@ void app_main(void) {
 | **Real-time Streaming** | [`openrouter_text_model_streaming`](examples/openrouter_text_model_streaming/) | [Streaming Guide](docs/streaming.md) |
 | **Function Calling** | [`function_calling_example`](examples/function_calling_example/) | [Function Calling](docs/function-calling.md) |
 | **Image & Audio** | [`multimodal_example`](examples/multimodal_example/) | [Multimodal Guide](docs/api-reference.md#multimodal-api-calls) |
+| **ESPHome / Home Assistant** | [`esphome examples`](examples/esphome/) | [ESPHome Guide](#-esphome-integration) |
 
 ## �️ Requirements
 
@@ -121,6 +123,91 @@ idf.py build flash monitor
 ```
 
 > 📖 **Need help?** Check our [Error Handling Guide](docs/error-handling.md) for troubleshooting tips.
+
+## 🏠 ESPHome Integration
+
+Use OpenRouter AI in your Home Assistant smart home with our ESPHome component.
+
+### Installation
+
+Add to your ESPHome configuration:
+
+```yaml
+external_components:
+  - source:
+      type: git
+      url: https://github.com/pastukhov/openrouter_client
+      ref: main
+    components: [openrouter]
+```
+
+### Basic Configuration
+
+```yaml
+openrouter:
+  api_key: !secret openrouter_api_key
+  model: "openai/gpt-4o-mini"
+  temperature: 0.7
+  max_tokens: 512
+  system_role: "You are a helpful smart home assistant."
+  on_response:
+    - logger.log:
+        format: "AI: %s"
+        args: ['response.c_str()']
+
+text_sensor:
+  - platform: openrouter
+    name: "AI Response"
+
+button:
+  - platform: template
+    name: "Ask AI"
+    on_press:
+      - openrouter.ask:
+          prompt: "What's the optimal temperature for sleeping?"
+```
+
+### Features
+
+- **Actions**: `openrouter.ask`, `openrouter.set_model`, `openrouter.set_system_role`
+- **Triggers**: `on_response`, `on_error`, `on_streaming_chunk`
+- **Text Sensor**: Publish responses to Home Assistant
+- **Streaming**: Optional real-time token streaming
+- **Non-blocking**: HTTP requests run in background task
+
+### Streaming Example
+
+```yaml
+openrouter:
+  api_key: !secret openrouter_api_key
+  model: "openai/gpt-4o-mini"
+  enable_streaming: true
+  on_streaming_chunk:
+    - logger.log:
+        format: "Chunk: %s"
+        args: ['chunk.c_str()']
+
+text_sensor:
+  - platform: openrouter
+    name: "AI Streaming"
+    publish_streaming: true  # Publish each chunk
+```
+
+### Dynamic Prompts with Sensors
+
+```yaml
+button:
+  - platform: template
+    name: "Ask About Temperature"
+    on_press:
+      - openrouter.ask:
+          prompt: !lambda |-
+            return "Current temperature is " +
+                   to_string(id(temp_sensor).state) +
+                   "°C. Is this comfortable?";
+```
+
+> 📂 **Full examples**: [`examples/esphome/`](examples/esphome/)
 
 ## 📋 Project Status
 
