@@ -1,0 +1,84 @@
+esphome:
+  name: openrouter-streaming
+  friendly_name: OpenRouter Streaming Example
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    version: recommended
+
+logger:
+  level: DEBUG
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "OpenRouter-Streaming"
+    password: "fallback123"
+
+captive_portal:
+
+# OpenRouter with streaming enabled
+openrouter:
+  api_key: !secret openrouter_api_key
+  model: "openai/gpt-4o-mini"
+  temperature: 0.7
+  max_tokens: 1024
+  system_role: "You are a helpful assistant. Provide detailed answers."
+  enable_streaming: true
+  http_timeout: 60s
+  response_buffer_size: 8192
+  on_response:
+    - logger.log:
+        format: "Complete response received (%d chars)"
+        args: ['response.length()']
+  on_streaming_chunk:
+    - logger.log:
+        format: "Chunk: %s"
+        args: ['chunk.c_str()']
+  on_error:
+    - logger.log:
+        format: "Error: %s"
+        args: ['error.c_str()']
+        level: ERROR
+
+# Text sensor for streaming - publishes each chunk
+text_sensor:
+  - platform: openrouter
+    name: "AI Streaming Response"
+    id: ai_streaming_response
+    publish_streaming: true
+
+  - platform: openrouter
+    name: "AI Final Response"
+    id: ai_final_response
+    publish_streaming: false
+
+button:
+  - platform: template
+    name: "Ask Long Question"
+    on_press:
+      - openrouter.ask:
+          prompt: "Explain how a smart home automation system works with sensors and actuators. Include examples of common use cases."
+
+  - platform: template
+    name: "Ask Short Question"
+    on_press:
+      - openrouter.ask:
+          prompt: "Hello! What time is it?"

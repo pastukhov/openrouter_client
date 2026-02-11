@@ -1,0 +1,64 @@
+menu "OpenRouter Client"
+
+    config OPENROUTER_DEFAULT_RESPONSE_BUFFER_SIZE
+        int "Size of response input buffer"
+        default 4096
+        help
+            This option sets the size of the buffer used for storing response data.
+    
+    config OPENROUTER_DEFAULT_HTTP_TIMEOUT
+        int "HTTP timeout in milliseconds"
+        default 30000
+        help
+            This option sets the timeout for HTTP requests in milliseconds.
+
+    config OPENROUTER_DEFAULT_HTTP_TIMEOUT_STREAMING
+        int "HTTP timeout for streaming requests in milliseconds"
+        default 60000
+        help
+            This option sets the timeout for HTTP streaming requests in milliseconds.
+
+    config OPENROUTER_DEFAULT_TEMPERATURE
+        string "Model Temperature value"
+        default "0.7"
+        help
+            The temperature parameter controls the randomness of the model's output.
+            A higher temperature results in more random outputs, while a lower temperature
+            makes the output more focused and deterministic.
+    
+    config OPENROUTER_DEFAULT_MAX_TOKENS
+        int "Maximum number of tokens in response"
+        default 1024
+        help
+            This option sets the maximum number of tokens that can be generated in the response.
+
+    config OPENROUTER_DEFAULT_TOP_P
+        string "Top-p sampling value"
+        default "1.0"
+        help
+            The top-p parameter controls the diversity of the generated output by
+            limiting the sampling to the most probable tokens. A higher value means
+            more tokens are considered, while a lower value focuses on the top tokens.
+    
+    config OPENROUTER_VERBOSE_LOGGING
+        bool "Enable verbose logging"
+        default n
+        help
+            Enable this option to output detailed logs for debugging and development purposes.
+
+    config OPENROUTER_DEFAULT_CONNECTION_REUSE
+        bool "Enable HTTP connection reuse by default"
+        default n
+        help
+            Enable this option to reuse HTTP connections for better performance.
+            This uses more memory but reduces latency for frequent requests.
+
+    config OPENROUTER_DEFAULT_CONNECTION_TIMEOUT
+        int "Default connection keep-alive timeout in milliseconds"
+        default 30000
+        depends on OPENROUTER_DEFAULT_CONNECTION_REUSE
+        help
+            This option sets the default timeout for keeping HTTP connections alive.
+            Connections will be closed after this timeout period of inactivity.
+
+endmenu
