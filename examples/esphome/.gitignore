@@ -1,0 +1,9 @@
+# ESPHome build artifacts
+/.esphome/
+/.platformio/
+/.cache/
+/.penv/
+/.pio/
+
+# Secrets file (contains API keys)
+/secrets.yaml

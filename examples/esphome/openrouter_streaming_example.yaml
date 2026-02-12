@@ -4,8 +4,11 @@ esphome:
 
 external_components:
   - source:
-      type: local
-      path: ../../components
+      type: git
+      url: https://github.com/pastukhov/openrouter_client
+      ref: main
+    components: [openrouter]
+    refresh: 1d
 
 esp32:
   board: esp32dev
