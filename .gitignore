@@ -10,3 +10,5 @@ dependencies.lock
 examples/esphome/secrets.yaml
 __pycache__/
 *.pyc
+.coverage
+coverage.xml
