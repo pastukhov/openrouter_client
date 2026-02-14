@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   python-schema-tests:
     runs-on: ubuntu-latest
@@ -78,3 +81,23 @@ jobs:
           . /opt/esp/idf/export.sh
           idf.py -C test_apps/openrouter_unit set-target esp32
           idf.py -C test_apps/openrouter_unit build
+
+  automerge:
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    needs:
+      - python-schema-tests
+      - esphome-config-smoke
+      - idf-unit-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Auto-merge PR after successful checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" --squash --delete-branch

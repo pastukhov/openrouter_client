@@ -10,6 +10,7 @@ This repository follows trunk-based development with exactly one long-lived bran
 4. Required checks must pass before merge (`python-schema-tests`, `esphome-config-smoke`, `idf-unit-build`).
 5. Approvals are optional before merge.
 6. Merged task branches should be deleted.
+7. PRs are auto-merged with squash when all required checks are green and branch policy constraints are satisfied.
 
 ## Commit Message Rules
 
