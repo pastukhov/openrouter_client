@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.0%2B-blue)](https://idf.espressif.com/)
 [![Version](https://img.shields.io/badge/Version-1.0.1-green)](https://github.com/nikhil-robinson/openrouter_client)
+[![Coverage](https://codecov.io/gh/pastukhov/openrouter_client/graph/badge.svg?branch=main)](https://codecov.io/gh/pastukhov/openrouter_client)
 
 Bring the power of modern AI to your ESP32 projects! This library transforms your microcontroller into an intelligent device capable of natural language processing, real-time conversations, and smart decision-making through OpenRouter's extensive model ecosystem.
 
@@ -221,7 +222,7 @@ Run locally:
 
 ```bash
 python -m pip install -r tests/requirements.txt
-pytest -q tests/python
+pytest -q tests/python --cov=components/openrouter --cov-report=term
 ```
 
 Run ESPHome config checks:
