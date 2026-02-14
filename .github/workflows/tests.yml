@@ -27,7 +27,15 @@ jobs:
           python -m pip install -r tests/requirements.txt
 
       - name: Run Python unit tests
-        run: pytest -q tests/python
+        run: |
+          pytest -q tests/python --cov=components/openrouter --cov-report=term --cov-report=xml:coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          flags: python-schema
+          fail_ci_if_error: false
 
   esphome-config-smoke:
     runs-on: ubuntu-latest
