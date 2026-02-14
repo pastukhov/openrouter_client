@@ -8,7 +8,7 @@ This repository follows trunk-based development with exactly one long-lived bran
 2. All changes must be submitted through Pull Requests into `main`.
 3. Direct pushes to `main` are prohibited.
 4. Required checks must pass before merge.
-5. At least one approval is required before merge.
+5. Approvals are optional before merge.
 6. Merged task branches should be deleted.
 
 ## Commit Message Rules
@@ -44,7 +44,7 @@ The script enforces:
 
 1. PR-only merges to default branch.
 2. Required status checks (strict mode).
-3. At least one approving review.
+3. Approving reviews are optional (not required).
 4. Dismiss stale reviews on new commits.
 5. Required conversation resolution.
 6. Linear history and no force pushes.
