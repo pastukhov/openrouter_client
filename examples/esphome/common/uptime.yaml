@@ -1,0 +1,9 @@
+sensor:
+# Uptime in DAYS
+  - platform: uptime
+    name: ${device_name} Uptime
+    id: ${device_name}_uptime
+    unit_of_measurement: days
+    update_interval: 3600s
+    filters:
+      - multiply: 0.000011574

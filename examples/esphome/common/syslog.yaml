@@ -1,0 +1,4 @@
+syslog:
+  ip_address: "192.168.14.60"
+  port: 514
+  min_level: INFO

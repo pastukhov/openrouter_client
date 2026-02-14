@@ -1,0 +1,20 @@
+sensor:
+  - platform: wifi_signal
+    name: $device_name WiFi Signal Sensor
+    id: "${device_name}_wifi_signal"
+    update_interval: 60s
+
+#text_sensor:
+#- platform: wifi_info
+#  ssid:
+#    name: "${device_name} WiFiname"
+#    id: "${device_name}_wifiname"
+#    icon: mdi:wifi
+#  ip_address:
+#    name: "${device_name} WiFiIP"
+#    id: "${device_name}_wifiip"
+#    icon: mdi:wifi
+#  bssid:
+#    name: "${device_name} WiFiBSSiD"
+#    id: "${device_name}_wifibssid"
+#    icon: mdi:wifi
