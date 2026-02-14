@@ -1,0 +1,10 @@
+wifi:
+  networks:
+  - ssid: !secret dacha_wifi_ssid
+    password: !secret dacha_wifi_password
+  - ssid: !secret home_wifi_ssid
+    password: !secret home_wifi_password
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${device_name}-fb"
+    password: !secret fallback_password

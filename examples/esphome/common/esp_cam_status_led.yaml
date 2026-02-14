@@ -1,0 +1,6 @@
+light:
+  - platform: status_led
+    name: "$device_name status LED"
+    pin: 
+      number: GPIO14
+      inverted: true

@@ -1,0 +1,15 @@
+captive_portal:
+
+logger:
+  level: debug
+
+udp:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+  id: api_password
+
+ota:
+  - platform: esphome
+    password: !secret ota_password

@@ -1,0 +1,311 @@
+substitutions:
+  device_name: m5core2openrouter
+  upper_device_name: M5Core2OpenRouter
+
+
+esphome:
+  name: $device_name
+  platformio_options:
+    upload_speed: 460800
+  on_boot:
+    then:
+      bm8563.read_time:
+
+esp32:
+  variant: esp32
+  framework:
+    type: esp-idf
+
+psram:
+  mode: quad
+  speed: 80MHz
+
+globals:
+  - id: autonomous_mode
+    type: bool
+    restore_value: true
+    initial_value: "true"
+
+packages:
+  # bluetooth: !include common/bluetooth.yaml
+  common: !include common/common.yaml
+  # esp_cam_status_led: !include common/esp_cam_status_led.yaml
+  # esp_cam_web: !include common/esp_cam_web.yaml
+  restart: !include common/restart.yaml
+  # syslog: !include common/syslog.yaml
+  time: !include common/time.yaml
+  uptime: !include common/uptime.yaml
+  version: !include common/version.yaml
+  web_server: !include common/web_server.yaml
+  wifi: !include common/wifi.yaml
+  wifi_signal: !include common/wifi_signal.yaml
+
+external_components:
+  - source: 
+      type: git
+      url: https://github.com/makerwolf/esphome-axp192
+      ref: esp-idf-compatibility
+    components: [axp192]
+  - source:
+      type: git
+      url: https://github.com/pastukhov/openrouter_client
+      ref: main
+    components: [openrouter]
+
+
+sensor:
+  - platform: axp192
+    model: M5CORE2
+    address: 0x34
+    i2c_id: bus_a
+    id: axp192_id
+    update_interval: 30s
+    battery_level:
+      name: "${upper_device_name} Battery Level"
+      id: "${device_name}_batterylevel"
+
+  - platform: mpu6886
+    address: 0x68
+    update_interval: 1s
+    accel_x:
+      name: "MPU6886 Accel X"
+    accel_y:
+      name: "MPU6886 Accel Y"
+    accel_z:
+      name: "MPU6886 Accel Z"
+    gyro_x:
+      name: "MPU6886 Gyro X"
+    gyro_y:
+      name: "MPU6886 Gyro Y"
+    gyro_z:
+      name: "MPU6886 Gyro Z"
+    temperature:
+      name: "MPU6886 Temperature"
+      id: mpu6886_temperature
+
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+
+i2c:
+  - id: bus_a
+    sda: GPIO21
+    scl: GPIO22
+    scan: true
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_header
+    size: 22
+  - file: "gfonts://Roboto Mono"
+    id: font_small
+    size: 14
+
+display:
+  - platform: ili9xxx
+    model: ili9342
+    cs_pin: GPIO5
+    dc_pin: GPIO15
+    invert_colors: true
+    update_interval: 1s
+    dimensions:
+      width: 320
+      height: 240
+    transform:
+      mirror_x: false # must be explicitly included, otherwise it defaults to true with the ili9342
+    lambda: |-
+      it.fill(Color(0, 0, 0));
+      it.printf(8, 8, id(font_header), Color(90, 210, 255), "OpenRouter Agent");
+
+      std::string mode = id(autonomous_mode) ? "AUTO" : "MANUAL";
+      std::string status = id(agent_status).state.empty() ? "boot" : id(agent_status).state;
+      it.printf(8, 36, id(font_small), Color(180, 180, 180), "Mode: %s", mode.c_str());
+      it.printf(160, 36, id(font_small), Color(180, 180, 180), "State: %s", status.c_str());
+
+      it.printf(8, 56, id(font_small), Color(245, 245, 245), "Temp: %.1f C", id(mpu6886_temperature).state);
+      it.printf(160, 56, id(font_small), Color(245, 245, 245), "WiFi: %.0f dBm", id(${device_name}_wifi_signal).state);
+      it.printf(8, 78, id(font_small), Color(255, 220, 120), "A:Run  B:Auto  C:Quick");
+
+      std::string response = id(agent_last_response).state;
+      if (response.empty()) {
+        response = "No response yet.";
+      }
+      if (response.size() > 168) {
+        response = response.substr(0, 165) + "...";
+      }
+
+      std::string wrapped;
+      const size_t line_len = 42;
+      for (size_t i = 0; i < response.size(); i += line_len) {
+        wrapped += response.substr(i, line_len);
+        if (i + line_len < response.size()) {
+          wrapped += "\n";
+        }
+      }
+      it.print(8, 102, id(font_small), Color(130, 255, 130), wrapped.c_str());
+
+touchscreen:
+  - platform: ft63x6
+    interrupt_pin: GPIO39
+
+binary_sensor:
+  # the virtual buttons--coordinates taken from
+  # https://github.com/m5stack/M5Core2/blob/0134dd3a38cfd335a1ec39da2c149f88baf54326/src/M5Core2.h#L54-L56
+  # and
+  # https://github.com/m5stack/M5Core2/blob/0134dd3a38cfd335a1ec39da2c149f88baf54326/src/utility/M5Button.h#L811-L815
+  # for the parameter order `(x, y, width, height)`
+  - platform: touchscreen
+    name: Button A
+    id: button_a
+    x_min: 10
+    x_max: 120
+    y_min: 240
+    y_max: 280
+    use_raw: true
+    on_press:
+      - script.execute: agent_tick
+
+  - platform: touchscreen
+    name: Button B
+    id: button_b
+    x_min: 130
+    x_max: 200
+    y_min: 240
+    y_max: 280
+    use_raw: true
+    on_press:
+      - switch.toggle: agent_autonomous_mode
+
+  - platform: touchscreen
+    name: Button C
+    id: button_c
+    x_min: 230
+    x_max: 310
+    y_min: 240
+    y_max: 280
+    use_raw: true
+    on_press:
+      - openrouter.ask:
+          prompt: "Summarize home state in one sentence."
+# doesn't work:
+# i2s_audio:
+#   id: bus_i2s
+#   i2s_lrclk_pin: GPIO0
+#   i2s_bclk_pin: GPIO12
+# speaker:
+#   - platform: i2s_audio
+#     dac_type: external
+#     i2s_dout_pin: GPIO2
+#     sample_rate: 44100
+#     bits_per_sample: 16bit
+# now use it:
+# on_...:
+#   then:
+#     # turn on the power for gpio0-2
+#     - lambda: |-
+#         id(axp192_id).Write1Byte(0x94, id(axp192_id).Read8bit(0x94) | 0x07);
+#     - speaker.volume_set: 50%
+#     - speaker.play:
+#         data: !lambda return startup_raw;
+time:
+  - platform: bm8563
+    update_interval: never
+  - platform: homeassistant
+    on_time_sync:
+      then:
+        bm8563.write_time:
+
+openrouter:
+  id: ai_agent
+  api_key: !secret openrouter_api_key
+  model: "openai/gpt-4o-mini"
+  temperature: 0.3
+  max_tokens: 256
+  system_role: "You are an on-device smart-home agent. Keep responses short, actionable, and safe."
+  enable_streaming: false
+  http_timeout: 30s
+  response_buffer_size: 4096
+  on_response:
+    - logger.log:
+        format: "AI Response: %s"
+        args: ['response.c_str()']
+    - text_sensor.template.publish:
+        id: agent_last_response
+        state: !lambda "return response;"
+    - text_sensor.template.publish:
+        id: agent_status
+        state: "idle"
+    - homeassistant.event:
+        event: esphome.openrouter_response
+        data:
+          response: !lambda 'return response;'
+  on_error:
+    - logger.log:
+        format: "AI Error: %s"
+        args: ['error.c_str()']
+        level: ERROR
+    - text_sensor.template.publish:
+        id: agent_status
+        state: "error"
+
+text_sensor:
+  - platform: openrouter
+    name: "AI Response"
+    id: ai_response
+
+  - platform: template
+    name: "Agent Last Response"
+    id: agent_last_response
+
+  - platform: template
+    name: "Agent Status"
+    id: agent_status
+    update_interval: never
+
+script:
+  - id: agent_tick
+    mode: queued
+    then:
+      - text_sensor.template.publish:
+          id: agent_status
+          state: "thinking"
+      - openrouter.ask:
+          prompt: !lambda |-
+            std::string prompt = "Goal: Keep comfort stable and recommend one micro-action.";
+            prompt += "\nContext:";
+            prompt += "\n- mpu_temp_c=" + to_string(id(mpu6886_temperature).state);
+            prompt += "\n- wifi_dbm=" + to_string(id(${device_name}_wifi_signal).state);
+            prompt += "\nOutput format: short plan + one recommended action.";
+            return prompt;
+
+button:
+  - platform: template
+    name: "Ask AI"
+    on_press:
+      - script.execute: agent_tick
+
+switch:
+  - platform: template
+    name: "Agent Autonomous Mode"
+    id: agent_autonomous_mode
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    turn_on_action:
+      - lambda: "id(autonomous_mode) = true;"
+      - text_sensor.template.publish:
+          id: agent_status
+          state: "auto:on"
+    turn_off_action:
+      - lambda: "id(autonomous_mode) = false;"
+      - text_sensor.template.publish:
+          id: agent_status
+          state: "auto:off"
+
+interval:
+  - interval: 5min
+    then:
+      - if:
+          condition:
+            lambda: "return id(autonomous_mode);"
+          then:
+            - script.execute: agent_tick
