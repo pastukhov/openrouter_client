@@ -51,8 +51,8 @@ packages:
 external_components:
   - source: 
       type: git
-      url: https://github.com/makerwolf/esphome-axp192
-      ref: esp-idf-compatibility
+      url: https://github.com/pastukhov/esphome-axp192
+      ref: master
     components: [axp192]
   - source:
       type: git
@@ -67,26 +67,71 @@ sensor:
     address: 0x34
     i2c_id: bus_a
     id: axp192_id
-    update_interval: 30s
+    update_interval: 5s
     battery_level:
       name: "${upper_device_name} Battery Level"
       id: "${device_name}_batterylevel"
+    battery_voltage:
+      name: "${upper_device_name} Battery Voltage"
+      id: "${device_name}_battery_voltage"
+    battery_charge_current:
+      name: "${upper_device_name} Battery Charge Current"
+      id: "${device_name}_battery_charge_current"
+    battery_discharge_current:
+      name: "${upper_device_name} Battery Discharge Current"
+      id: "${device_name}_battery_discharge_current"
+    battery_power:
+      name: "${upper_device_name} Battery Power"
+      id: "${device_name}_battery_power"
+    vbus_voltage:
+      name: "${upper_device_name} VBUS Voltage"
+      id: "${device_name}_vbus_voltage"
+    vbus_current:
+      name: "${upper_device_name} VBUS Current"
+      id: "${device_name}_vbus_current"
+    vin_voltage:
+      name: "${upper_device_name} VIN Voltage"
+      id: "${device_name}_vin_voltage"
+    vin_current:
+      name: "${upper_device_name} VIN Current"
+      id: "${device_name}_vin_current"
+    aps_voltage:
+      name: "${upper_device_name} APS Voltage"
+      id: "${device_name}_aps_voltage"
+    pmu_temperature:
+      name: "${upper_device_name} PMU Temperature"
+      id: "${device_name}_pmu_temperature"
+    coulomb_in:
+      name: "${upper_device_name} Coulomb In"
+      id: "${device_name}_coulomb_in"
+    coulomb_out:
+      name: "${upper_device_name} Coulomb Out"
+      id: "${device_name}_coulomb_out"
+    coulomb_delta:
+      name: "${upper_device_name} Coulomb Delta"
+      id: "${device_name}_coulomb_delta"
 
   - platform: mpu6886
     address: 0x68
     update_interval: 2s
     accel_x:
       name: "MPU6886 Accel X"
+      id: mpu6886_accel_x
     accel_y:
       name: "MPU6886 Accel Y"
+      id: mpu6886_accel_y
     accel_z:
       name: "MPU6886 Accel Z"
+      id: mpu6886_accel_z
     gyro_x:
       name: "MPU6886 Gyro X"
+      id: mpu6886_gyro_x
     gyro_y:
       name: "MPU6886 Gyro Y"
+      id: mpu6886_gyro_y
     gyro_z:
       name: "MPU6886 Gyro Z"
+      id: mpu6886_gyro_z
     temperature:
       name: "MPU6886 Temperature (Raw)"
       id: mpu6886_temperature_raw
@@ -147,6 +192,11 @@ spi:
   clk_pin: GPIO18
   mosi_pin: GPIO23
 
+i2s_audio:
+  - id: bus_i2s
+    i2s_lrclk_pin: GPIO0
+    i2s_bclk_pin: GPIO12
+
 i2c:
   - id: bus_a
     sda: GPIO21
@@ -175,86 +225,101 @@ display:
       mirror_x: false # must be explicitly included, otherwise it defaults to true with the ili9342
     lambda: |-
       it.fill(Color(0, 0, 0));
-      it.printf(8, 6, id(font_header), Color(90, 210, 255), "OpenRouter Agent");
-
-      std::string mode = id(autonomous_mode) ? "AUTO" : "MANUAL";
+      const uint32_t page = (millis() / 7000UL) % 3UL;
+      std::string mode = id(autonomous_mode) ? "AUTO" : "MAN";
       std::string status = id(agent_status).state.empty() ? "boot" : id(agent_status).state;
-      it.printf(8, 34, id(font_small), Color(180, 180, 180), "%s | %s", mode.c_str(), status.c_str());
-      it.printf(8, 50, id(font_small), Color(245, 245, 245), "T:%.1fC  WiFi:%.0fdBm", id(mpu6886_temperature).state, id(${device_name}_wifi_signal).state);
-      it.printf(8, 66, id(font_small), Color(255, 220, 120), "A:Run  B:Auto  C:Quick");
-
-      std::string response = id(agent_last_response).state;
-      if (response.empty()) {
-        response = "No response yet.";
+      if (status.size() > 10) {
+        status = status.substr(0, 10);
       }
 
-      // Normalize whitespace from model output for stable on-screen rendering.
-      for (auto &ch : response) {
-        if (ch == '\n' || ch == '\r' || ch == '\t') {
-          ch = ' ';
-        }
-      }
-      std::string compact;
-      compact.reserve(response.size());
-      bool prev_space = false;
-      for (char ch : response) {
-        bool is_space = (ch == ' ');
-        if (is_space && prev_space) {
-          continue;
-        }
-        compact.push_back(ch);
-        prev_space = is_space;
-      }
+      it.printf(6, 4, id(font_small), Color(90, 210, 255), "S%u/3", (unsigned) (page + 1));
+      it.printf(50, 4, id(font_small), Color(180, 180, 180), "%s %s", mode.c_str(), status.c_str());
 
-      const int response_x = 8;
-      const int response_y = 84;
-      const int line_height = 13;
-      const int max_lines = 11;
-      const size_t max_chars_per_line = 34;
-
-      size_t start = 0;
-      int line_index = 0;
-      while (start < compact.size() && line_index < max_lines) {
-        size_t end = start + max_chars_per_line;
-        if (end > compact.size()) {
-          end = compact.size();
+      int y = 22;
+      const int lh = 14;
+      auto print_f = [&](const char *label, float value, const char *unit, Color color, int precision) {
+        if (isnan(value)) {
+          it.printf(6, y, id(font_small), color, "%s:--%s", label, unit);
+        } else {
+          it.printf(6, y, id(font_small), color, "%s:%.*f%s", label, precision, value, unit);
         }
+        y += lh;
+      };
+      auto print_b = [&](const char *label, bool value, Color color) {
+        it.printf(6, y, id(font_small), color, "%s:%s", label, value ? "ON" : "OFF");
+        y += lh;
+      };
 
-        size_t split = end;
-        if (end < compact.size()) {
-          size_t space_pos = compact.rfind(' ', end - 1);
-          if (space_pos != std::string::npos && space_pos > start + 10) {
-            split = space_pos;
+      if (page == 0) {
+        print_f("MPUT", id(mpu6886_temperature).state, "C", Color(245, 245, 245), 1);
+        print_f("MRAW", id(mpu6886_temperature_raw).state, "C", Color(170, 170, 170), 1);
+        print_f("WF", id(${device_name}_wifi_signal).state, "dBm", Color(245, 245, 245), 0);
+        print_f("UP", id(${device_name}_uptime).state, "d", Color(170, 170, 170), 1);
+        print_f("BL", id(${device_name}_batterylevel).state, "%", Color(130, 255, 130), 0);
+        print_f("BV", id(${device_name}_battery_voltage).state, "V", Color(130, 255, 130), 2);
+        print_f("PT", id(${device_name}_pmu_temperature).state, "C", Color(255, 220, 120), 1);
+        print_b("Charging", id(${device_name}_charging).state, Color(130, 255, 130));
+        print_b("VBUS", id(${device_name}_vbus_present).state, Color(130, 255, 130));
+        print_b("Battery", id(${device_name}_battery_present).state, Color(130, 255, 130));
+        print_b("Warning", id(${device_name}_pmu_warning).state, Color(255, 140, 140));
+      } else if (page == 1) {
+        print_f("BCI", id(${device_name}_battery_charge_current).state, "A", Color(130, 255, 130), 2);
+        print_f("BDI", id(${device_name}_battery_discharge_current).state, "A", Color(130, 255, 130), 2);
+        print_f("BPW", id(${device_name}_battery_power).state, "W", Color(130, 255, 130), 2);
+        print_f("VBV", id(${device_name}_vbus_voltage).state, "V", Color(170, 220, 255), 2);
+        print_f("VBI", id(${device_name}_vbus_current).state, "A", Color(170, 220, 255), 2);
+        print_f("VIV", id(${device_name}_vin_voltage).state, "V", Color(170, 220, 255), 2);
+        print_f("VII", id(${device_name}_vin_current).state, "A", Color(170, 220, 255), 2);
+        print_f("APS", id(${device_name}_aps_voltage).state, "V", Color(170, 220, 255), 2);
+        print_f("CIN", id(${device_name}_coulomb_in).state, "mAh", Color(255, 220, 120), 1);
+        print_f("COUT", id(${device_name}_coulomb_out).state, "mAh", Color(255, 220, 120), 1);
+        print_f("CD", id(${device_name}_coulomb_delta).state, "mAh", Color(255, 220, 120), 1);
+      } else {
+        print_f("AX", id(mpu6886_accel_x).state, "m/s2", Color(170, 220, 255), 2);
+        print_f("AY", id(mpu6886_accel_y).state, "m/s2", Color(170, 220, 255), 2);
+        print_f("AZ", id(mpu6886_accel_z).state, "m/s2", Color(170, 220, 255), 2);
+        print_f("GX", id(mpu6886_gyro_x).state, "d/s", Color(255, 220, 120), 1);
+        print_f("GY", id(mpu6886_gyro_y).state, "d/s", Color(255, 220, 120), 1);
+        print_f("GZ", id(mpu6886_gyro_z).state, "d/s", Color(255, 220, 120), 1);
+
+        std::string resp = id(agent_last_response).state;
+        for (auto &ch : resp) {
+          if (ch == '\n' || ch == '\r' || ch == '\t') {
+            ch = ' ';
           }
         }
-
-        std::string part = compact.substr(start, split - start);
-        while (!part.empty() && part.front() == ' ') {
-          part.erase(part.begin());
+        if (resp.size() > 34) {
+          resp = resp.substr(0, 34) + "...";
         }
-        while (!part.empty() && part.back() == ' ') {
-          part.pop_back();
-        }
-        if (part.empty()) {
-          start = (split == start) ? start + 1 : split + 1;
-          continue;
-        }
-
-        if (line_index == max_lines - 1 && split < compact.size()) {
-          if (part.size() > max_chars_per_line - 3) {
-            part = part.substr(0, max_chars_per_line - 3);
-          }
-          part += "...";
-        }
-
-        it.print(response_x, response_y + line_index * line_height, id(font_small), Color(130, 255, 130), part.c_str());
-        line_index++;
-        start = (split < compact.size() && compact[split] == ' ') ? split + 1 : split;
+        it.printf(6, y + 4, id(font_small), Color(130, 255, 130), "AI: %s", resp.c_str());
       }
 
 touchscreen:
   - platform: ft63x6
     interrupt_pin: GPIO39
+
+speaker:
+  - platform: i2s_audio
+    id: core2_speaker
+    dac_type: external
+    i2s_audio_id: bus_i2s
+    i2s_dout_pin: GPIO2
+    channel: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    timeout: never
+
+microphone:
+  - platform: i2s_audio
+    id: core2_microphone
+    adc_type: external
+    i2s_audio_id: bus_i2s
+    i2s_din_pin: GPIO34
+    pdm: true
+    channel: right
+    sample_rate: 16000
+    bits_per_sample: 32bit
+    correct_dc_offset: true
 
 binary_sensor:
   # the virtual buttons--coordinates taken from
@@ -295,6 +360,21 @@ binary_sensor:
     on_press:
       - openrouter.ask:
           prompt: "Summarize home state in one sentence."
+
+  - platform: axp192
+    axp192_id: axp192_id
+    charging:
+      name: "${upper_device_name} Charging"
+      id: "${device_name}_charging"
+    vbus_present:
+      name: "${upper_device_name} VBUS Present"
+      id: "${device_name}_vbus_present"
+    battery_present:
+      name: "${upper_device_name} Battery Present"
+      id: "${device_name}_battery_present"
+    warning_level:
+      name: "${upper_device_name} PMU Warning"
+      id: "${device_name}_pmu_warning"
 # doesn't work:
 # i2s_audio:
 #   id: bus_i2s
@@ -391,8 +471,57 @@ button:
     name: "Ask AI"
     on_press:
       - script.execute: agent_tick
+  - platform: axp192
+    axp192_id: axp192_id
+    power_off:
+      name: "${upper_device_name} PMU Power Off"
+    coulomb_clear:
+      name: "${upper_device_name} PMU Coulomb Clear"
+
+number:
+  - platform: template
+    name: "${upper_device_name} Display Brightness"
+    id: display_brightness
+    min_value: 10
+    max_value: 100
+    step: 5
+    restore_value: true
+    optimistic: true
+    initial_value: 100
+    set_action:
+      - lambda: |-
+          id(axp192_id).set_brightness(x / 100.0f);
+      - component.update: axp192_id
+  - platform: axp192
+    axp192_id: axp192_id
+    charge_current_limit:
+      name: "${upper_device_name} Charge Current Limit"
 
 switch:
+  - platform: axp192
+    axp192_id: axp192_id
+    model: M5CORE2
+    ldo2:
+      name: "${upper_device_name} PMU LDO2"
+      restore_mode: ALWAYS_ON
+    ldo3:
+      name: "${upper_device_name} PMU LDO3"
+      restore_mode: ALWAYS_OFF
+    dcdc1:
+      name: "${upper_device_name} PMU DCDC1"
+      restore_mode: ALWAYS_ON
+    dcdc3:
+      name: "${upper_device_name} PMU DCDC3"
+      restore_mode: ALWAYS_ON
+    speaker_enable:
+      name: "${upper_device_name} Speaker Enable"
+      restore_mode: ALWAYS_OFF
+    green_led:
+      name: "${upper_device_name} Green LED"
+      restore_mode: ALWAYS_OFF
+    adc_enable:
+      name: "${upper_device_name} PMU ADC Enable"
+      restore_mode: ALWAYS_ON
   - platform: template
     name: "Agent Autonomous Mode"
     id: agent_autonomous_mode
@@ -408,7 +537,24 @@ switch:
       - text_sensor.template.publish:
           id: agent_status
           state: "auto:off"
-
+  - platform: template
+    name: "${upper_device_name} Microphone Capture"
+    id: mic_capture_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    turn_on_action:
+      - microphone.capture: core2_microphone
+    turn_off_action:
+      - microphone.stop_capture: core2_microphone
+  - platform: template
+    name: "${upper_device_name} Microphone Mute"
+    id: mic_mute_switch
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    turn_on_action:
+      - microphone.mute: core2_microphone
+    turn_off_action:
+      - microphone.unmute: core2_microphone
 interval:
   - interval: 5min
     then:
