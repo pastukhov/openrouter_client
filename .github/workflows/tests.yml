@@ -100,4 +100,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr merge "${{ github.event.pull_request.number }}" --squash --delete-branch
+          gh pr merge -R pastukhov/openrouter_client "${{ github.event.pull_request.number }}" --squash --delete-branch
