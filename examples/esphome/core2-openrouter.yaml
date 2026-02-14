@@ -25,6 +25,14 @@ globals:
     type: bool
     restore_value: true
     initial_value: "true"
+  - id: mpu6886_temp_last_valid
+    type: float
+    restore_value: false
+    initial_value: "NAN"
+  - id: mpu6886_temp_last_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
 
 packages:
   # bluetooth: !include common/bluetooth.yaml
@@ -66,7 +74,7 @@ sensor:
 
   - platform: mpu6886
     address: 0x68
-    update_interval: 1s
+    update_interval: 2s
     accel_x:
       name: "MPU6886 Accel X"
     accel_y:
@@ -80,8 +88,60 @@ sensor:
     gyro_z:
       name: "MPU6886 Gyro Z"
     temperature:
-      name: "MPU6886 Temperature"
-      id: mpu6886_temperature
+      name: "MPU6886 Temperature (Raw)"
+      id: mpu6886_temperature_raw
+      internal: true
+
+  - platform: template
+    name: "MPU6886 Temperature"
+    id: mpu6886_temperature
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    update_interval: 2s
+    lambda: |-
+      return id(mpu6886_temperature_raw).state;
+    filters:
+      - lambda: |-
+          uint32_t now_ms = millis();
+          // Ignore MPU temperature during boot warm-up.
+          if (now_ms < 60000) {
+            return {};
+          }
+          if (isnan(x)) {
+            return {};
+          }
+          // Reject physically implausible/outlier values for this enclosure.
+          if (x < 20.0f || x > 50.0f) {
+            return {};
+          }
+          if (!isnan(id(mpu6886_temp_last_valid)) && id(mpu6886_temp_last_ms) != 0) {
+            float dt_s = (now_ms - id(mpu6886_temp_last_ms)) / 1000.0f;
+            if (dt_s < 0.1f) {
+              dt_s = 0.1f;
+            }
+            // Limit speed of change to avoid I2C glitches leaking into telemetry.
+            const float max_rate_c_per_s = 0.15f;
+            float max_jump = max_rate_c_per_s * dt_s;
+            if (max_jump < 0.3f) {
+              max_jump = 0.3f;
+            }
+            if (fabsf(x - id(mpu6886_temp_last_valid)) > max_jump) {
+              return {};
+            }
+          }
+          id(mpu6886_temp_last_valid) = x;
+          id(mpu6886_temp_last_ms) = now_ms;
+          return x;
+      - median:
+          window_size: 15
+          send_every: 5
+          send_first_at: 1
+      - sliding_window_moving_average:
+          window_size: 10
+          send_every: 1
+      - throttle_average: 20s
+      - heartbeat: 30s
 
 spi:
   clk_pin: GPIO18
@@ -96,10 +156,10 @@ i2c:
 font:
   - file: "gfonts://Roboto"
     id: font_header
-    size: 22
+    size: 20
   - file: "gfonts://Roboto Mono"
     id: font_small
-    size: 14
+    size: 12
 
 display:
   - platform: ili9xxx
@@ -115,34 +175,82 @@ display:
       mirror_x: false # must be explicitly included, otherwise it defaults to true with the ili9342
     lambda: |-
       it.fill(Color(0, 0, 0));
-      it.printf(8, 8, id(font_header), Color(90, 210, 255), "OpenRouter Agent");
+      it.printf(8, 6, id(font_header), Color(90, 210, 255), "OpenRouter Agent");
 
       std::string mode = id(autonomous_mode) ? "AUTO" : "MANUAL";
       std::string status = id(agent_status).state.empty() ? "boot" : id(agent_status).state;
-      it.printf(8, 36, id(font_small), Color(180, 180, 180), "Mode: %s", mode.c_str());
-      it.printf(160, 36, id(font_small), Color(180, 180, 180), "State: %s", status.c_str());
-
-      it.printf(8, 56, id(font_small), Color(245, 245, 245), "Temp: %.1f C", id(mpu6886_temperature).state);
-      it.printf(160, 56, id(font_small), Color(245, 245, 245), "WiFi: %.0f dBm", id(${device_name}_wifi_signal).state);
-      it.printf(8, 78, id(font_small), Color(255, 220, 120), "A:Run  B:Auto  C:Quick");
+      it.printf(8, 34, id(font_small), Color(180, 180, 180), "%s | %s", mode.c_str(), status.c_str());
+      it.printf(8, 50, id(font_small), Color(245, 245, 245), "T:%.1fC  WiFi:%.0fdBm", id(mpu6886_temperature).state, id(${device_name}_wifi_signal).state);
+      it.printf(8, 66, id(font_small), Color(255, 220, 120), "A:Run  B:Auto  C:Quick");
 
       std::string response = id(agent_last_response).state;
       if (response.empty()) {
         response = "No response yet.";
       }
-      if (response.size() > 168) {
-        response = response.substr(0, 165) + "...";
-      }
 
-      std::string wrapped;
-      const size_t line_len = 42;
-      for (size_t i = 0; i < response.size(); i += line_len) {
-        wrapped += response.substr(i, line_len);
-        if (i + line_len < response.size()) {
-          wrapped += "\n";
+      // Normalize whitespace from model output for stable on-screen rendering.
+      for (auto &ch : response) {
+        if (ch == '\n' || ch == '\r' || ch == '\t') {
+          ch = ' ';
         }
       }
-      it.print(8, 102, id(font_small), Color(130, 255, 130), wrapped.c_str());
+      std::string compact;
+      compact.reserve(response.size());
+      bool prev_space = false;
+      for (char ch : response) {
+        bool is_space = (ch == ' ');
+        if (is_space && prev_space) {
+          continue;
+        }
+        compact.push_back(ch);
+        prev_space = is_space;
+      }
+
+      const int response_x = 8;
+      const int response_y = 84;
+      const int line_height = 13;
+      const int max_lines = 11;
+      const size_t max_chars_per_line = 34;
+
+      size_t start = 0;
+      int line_index = 0;
+      while (start < compact.size() && line_index < max_lines) {
+        size_t end = start + max_chars_per_line;
+        if (end > compact.size()) {
+          end = compact.size();
+        }
+
+        size_t split = end;
+        if (end < compact.size()) {
+          size_t space_pos = compact.rfind(' ', end - 1);
+          if (space_pos != std::string::npos && space_pos > start + 10) {
+            split = space_pos;
+          }
+        }
+
+        std::string part = compact.substr(start, split - start);
+        while (!part.empty() && part.front() == ' ') {
+          part.erase(part.begin());
+        }
+        while (!part.empty() && part.back() == ' ') {
+          part.pop_back();
+        }
+        if (part.empty()) {
+          start = (split == start) ? start + 1 : split + 1;
+          continue;
+        }
+
+        if (line_index == max_lines - 1 && split < compact.size()) {
+          if (part.size() > max_chars_per_line - 3) {
+            part = part.substr(0, max_chars_per_line - 3);
+          }
+          part += "...";
+        }
+
+        it.print(response_x, response_y + line_index * line_height, id(font_small), Color(130, 255, 130), part.c_str());
+        line_index++;
+        start = (split < compact.size() && compact[split] == ' ') ? split + 1 : split;
+      }
 
 touchscreen:
   - platform: ft63x6
@@ -220,8 +328,8 @@ openrouter:
   api_key: !secret openrouter_api_key
   model: "openai/gpt-4o-mini"
   temperature: 0.3
-  max_tokens: 256
-  system_role: "You are an on-device smart-home agent. Keep responses short, actionable, and safe."
+  max_tokens: 120
+  system_role: "You are an on-device smart-home agent. Reply in plain text only (no markdown, no lists), concise, one actionable recommendation, max 160 characters."
   enable_streaming: false
   http_timeout: 30s
   response_buffer_size: 4096
@@ -275,7 +383,7 @@ script:
             prompt += "\nContext:";
             prompt += "\n- mpu_temp_c=" + to_string(id(mpu6886_temperature).state);
             prompt += "\n- wifi_dbm=" + to_string(id(${device_name}_wifi_signal).state);
-            prompt += "\nOutput format: short plan + one recommended action.";
+            prompt += "\nOutput format: plain text only, no markdown, max 160 chars, single recommendation.";
             return prompt;
 
 button:
