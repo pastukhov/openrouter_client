@@ -55,4 +55,17 @@ gh api \
   "repos/$owner/$repo/branches/$default_branch/protection" \
   --input "$payload_file" >/dev/null
 
+# Set required status checks explicitly. This endpoint is authoritative for contexts.
+checks_payload_file="$(mktemp)"
+trap 'rm -f "$payload_file" "$checks_payload_file"' EXIT
+cat >"$checks_payload_file" <<'EOF'
+["python-schema-tests","esphome-config-smoke","idf-unit-build"]
+EOF
+
+gh api \
+  --method PUT \
+  -H "Accept: application/vnd.github+json" \
+  "repos/$owner/$repo/branches/$default_branch/protection/required_status_checks/contexts" \
+  --input "$checks_payload_file" >/dev/null
+
 echo "Branch protection updated for $owner/$repo:$default_branch"

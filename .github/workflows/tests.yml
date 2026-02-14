@@ -1,0 +1,103 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python-schema-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r tests/requirements.txt
+
+      - name: Run Python unit tests
+        run: pytest -q tests/python
+
+  esphome-config-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ESPHome
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install esphome==2026.1.5
+
+      - name: Create CI secrets file
+        run: |
+          cat > examples/esphome/secrets.yaml <<'EOF'
+          wifi_ssid: "ci"
+          wifi_password: "ci-password"
+          fallback_password: "ci-fallback-password"
+          api_encryption_key: "Gs1jrUnvpP4xB1imiIEMc546cNP+BZ8gGOdnoJz022w="
+          ota_password: "ci-ota-password"
+          openrouter_api_key: "ci-openrouter-key"
+          dacha_wifi_ssid: "ci-dacha"
+          dacha_wifi_password: "ci-dacha-password"
+          home_wifi_ssid: "ci-home"
+          home_wifi_password: "ci-home-password"
+          EOF
+
+      - name: Validate ESPHome configs
+        env:
+          ESPHOME_DATA_DIR: /tmp/esphome-data
+        run: |
+          esphome config examples/esphome/openrouter_example.yaml
+          esphome config examples/esphome/openrouter_streaming_example.yaml
+          esphome config examples/esphome/core2-openrouter.yaml
+
+  idf-unit-build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build unit test app
+        run: |
+          . /opt/esp/idf/export.sh
+          idf.py -C test_apps/openrouter_unit set-target esp32
+          idf.py -C test_apps/openrouter_unit build
+
+  automerge:
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    needs:
+      - python-schema-tests
+      - esphome-config-smoke
+      - idf-unit-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Auto-merge PR after successful checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge -R pastukhov/openrouter_client "${{ github.event.pull_request.number }}" --squash --delete-branch

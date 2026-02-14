@@ -209,6 +209,29 @@ button:
 
 > 📂 **Full examples**: [`examples/esphome/`](examples/esphome/)
 
+## 🧪 Testing
+
+This repository now includes a baseline automated test setup:
+
+- **Python unit tests** for ESPHome schema/actions in `tests/python/`
+- **ESPHome smoke validation** for example YAML files
+- **ESP-IDF unit-test app build** in `test_apps/openrouter_unit/`
+
+Run locally:
+
+```bash
+python -m pip install -r tests/requirements.txt
+pytest -q tests/python
+```
+
+Run ESPHome config checks:
+
+```bash
+esphome config examples/esphome/openrouter_example.yaml
+esphome config examples/esphome/openrouter_streaming_example.yaml
+esphome config examples/esphome/core2-openrouter.yaml
+```
+
 ## 📋 Project Status
 
 - ✅ **Stable**: Core API, streaming, function calling

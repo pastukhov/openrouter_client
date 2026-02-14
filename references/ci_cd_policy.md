@@ -7,9 +7,10 @@ This repository follows trunk-based development with exactly one long-lived bran
 1. Task branches must start from latest `origin/main`.
 2. All changes must be submitted through Pull Requests into `main`.
 3. Direct pushes to `main` are prohibited.
-4. Required checks must pass before merge.
+4. Required checks must pass before merge (`python-schema-tests`, `esphome-config-smoke`, `idf-unit-build`).
 5. Approvals are optional before merge.
 6. Merged task branches should be deleted.
+7. PRs are auto-merged with squash when all required checks are green and branch policy constraints are satisfied.
 
 ## Commit Message Rules
 
@@ -43,7 +44,7 @@ scripts/enforce_github_branch_protection.sh
 The script enforces:
 
 1. PR-only merges to default branch.
-2. Required status checks (strict mode).
+2. Required status checks (strict mode): `python-schema-tests`, `esphome-config-smoke`, `idf-unit-build`.
 3. Approving reviews are optional (not required).
 4. Dismiss stale reviews on new commits.
 5. Required conversation resolution.
