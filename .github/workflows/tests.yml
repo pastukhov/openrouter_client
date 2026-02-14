@@ -48,7 +48,7 @@ jobs:
           wifi_ssid: "ci"
           wifi_password: "ci-password"
           fallback_password: "ci-fallback-password"
-          api_encryption_key: "ci-api-key"
+          api_encryption_key: "Gs1jrUnvpP4xB1imiIEMc546cNP+BZ8gGOdnoJz022w="
           ota_password: "ci-ota-password"
           openrouter_api_key: "ci-openrouter-key"
           dacha_wifi_ssid: "ci-dacha"
@@ -75,5 +75,6 @@ jobs:
 
       - name: Build unit test app
         run: |
+          . /opt/esp/idf/export.sh
           idf.py -C test_apps/openrouter_unit set-target esp32
           idf.py -C test_apps/openrouter_unit build
