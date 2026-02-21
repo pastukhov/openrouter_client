@@ -1,0 +1,14 @@
+{
+  "name": "openrouter_client",
+  "version": "1.0.1",
+  "description": "OpenRouter API client for ESP32",
+  "license": "MIT",
+  "frameworks": ["arduino", "espidf"],
+  "platforms": "espressif32",
+  "headers": "openrouter.h",
+  "build": {
+    "srcFilter": ["+<openrouter.c>"],
+    "includeDir": "include",
+    "flags": ["-std=gnu11"]
+  }
+}
