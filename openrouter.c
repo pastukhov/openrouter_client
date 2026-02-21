@@ -659,9 +659,11 @@ static esp_err_t http_event_handler_non_streaming(esp_http_client_event_t *evt)
         ESP_LOGW(TAG, "HTTP_EVENT_DISCONNECTED (non-streaming)");
         break;
 
+#ifdef HTTP_EVENT_REDIRECT
     case HTTP_EVENT_REDIRECT:
         ESP_LOGI(TAG, "HTTP_EVENT_REDIRECT");
         break;
+#endif
 
     default:
         ESP_LOGV(TAG, "Unhandled HTTP event: %d", evt->event_id);
