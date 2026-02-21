@@ -15,6 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include <ctype.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -509,7 +510,7 @@ static bool is_connection_valid(openrouter_handle_t handle)
     uint32_t elapsed_time = current_time - handle->connection_pool.last_used_time;
 
     if (elapsed_time > handle->connection_timeout_ms) {
-        ESP_LOGD(TAG, "Connection expired after %lu ms (timeout: %lu ms)", elapsed_time, handle->connection_timeout_ms);
+        ESP_LOGD(TAG, "Connection expired after %" PRIu32 " ms (timeout: %" PRIu32 " ms)", elapsed_time, handle->connection_timeout_ms);
         return false;
     }
 
@@ -527,7 +528,7 @@ static void cleanup_connection(openrouter_handle_t handle)
         return;
     }
 
-    ESP_LOGD(TAG, "Cleaning up HTTP connection (requests served: %lu)", handle->connection_pool.request_count);
+    ESP_LOGD(TAG, "Cleaning up HTTP connection (requests served: %" PRIu32 ")", handle->connection_pool.request_count);
 
     esp_http_client_cleanup(handle->connection_pool.client);
 
@@ -559,7 +560,7 @@ static esp_err_t get_http_client(openrouter_handle_t handle, esp_http_client_con
         handle->connection_pool.request_count++;
         is_reused = true;
 
-        ESP_LOGD(TAG, "Reusing HTTP connection (request #%lu)", handle->connection_pool.request_count);
+        ESP_LOGD(TAG, "Reusing HTTP connection (request #%" PRIu32 ")", handle->connection_pool.request_count);
     } else {
         /* Clean up any old connection */
         if (handle->connection_pool.client) {
@@ -1446,7 +1447,7 @@ esp_err_t openrouter_set_connection_timeout(openrouter_handle_t handle, uint32_t
     handle->connection_timeout_ms = timeout_ms > 0 ? timeout_ms : OPENROUTER_DEFAULT_CONNECTION_TIMEOUT;
     xSemaphoreGive(handle->mutex);
 
-    ESP_LOGI(TAG, "HTTP connection timeout set to %lu ms", handle->connection_timeout_ms);
+    ESP_LOGI(TAG, "HTTP connection timeout set to %" PRIu32 " ms", handle->connection_timeout_ms);
     return ESP_OK;
 }
 
