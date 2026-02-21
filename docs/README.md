@@ -104,13 +104,13 @@ esp_err_t openrouter_call_with_image(openrouter_handle_t handle, const char *pro
 
 - **[OpenRouter API Documentation](https://openrouter.ai/docs)** - Official OpenRouter API docs
 - **[ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/)** - ESP-IDF documentation
-- **[GitHub Repository](https://github.com/nikhil-robinson/openrouter-esp-idf)** - Source code and issues
+- **[GitHub Repository](https://github.com/pastukhov/openrouter-esp-idf)** - Source code and issues
 - **[Examples](../examples/)** - Practical implementation examples
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/nikhil-robinson/openrouter-esp-idf/issues)
-- 💬 **Questions**: [GitHub Discussions](https://github.com/nikhil-robinson/openrouter-esp-idf/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/pastukhov/openrouter-esp-idf/issues)
+- 💬 **Questions**: [GitHub Discussions](https://github.com/pastukhov/openrouter-esp-idf/discussions)
 - 📖 **Documentation Issues**: Please report in GitHub Issues with the "documentation" label
 
 ---

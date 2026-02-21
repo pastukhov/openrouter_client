@@ -2,10 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.0%2B-blue)](https://idf.espressif.com/)
-[![Version](https://img.shields.io/badge/Version-1.0.1-green)](https://github.com/nikhil-robinson/openrouter_client)
+[![Version](https://img.shields.io/badge/Version-1.0.1-green)](https://github.com/pastukhov/openrouter_client)
 [![Coverage](https://codecov.io/gh/pastukhov/openrouter_client/graph/badge.svg?branch=main)](https://codecov.io/gh/pastukhov/openrouter_client)
 
 Bring the power of modern AI to your ESP32 projects! This library transforms your microcontroller into an intelligent device capable of natural language processing, real-time conversations, and smart decision-making through OpenRouter's extensive model ecosystem.
+
+> Note: This project is based on https://github.com/nikhil-robinson/openrouter_client
 
 ## ✨ Key Features
 
@@ -28,7 +30,7 @@ Add to your ESP-IDF project:
 # idf_component.yml
 dependencies:
   openrouter_client:
-    git: https://github.com/nikhil-robinson/openrouter_client.git
+    git: https://github.com/pastukhov/openrouter_client.git
     version: "^1.0.0"
 ```
 
@@ -247,11 +249,11 @@ Contributions welcome! Please:
 3. Make your changes
 4. Submit a pull request
 
-Check out [good first issues](https://github.com/nikhil-robinson/openrouter_client/labels/good%20first%20issue) to get started.
+Check out [good first issues](https://github.com/pastukhov/openrouter_client/labels/good%20first%20issue) to get started.
 
 ## 📄 License & Support
 
-**License**: [MIT](LICENSE) | **Issues**: [GitHub Issues](https://github.com/nikhil-robinson/openrouter_client/issues) | **Docs**: [OpenRouter API](https://openrouter.ai/docs)
+**License**: [MIT](LICENSE) | **Issues**: [GitHub Issues](https://github.com/pastukhov/openrouter_client/issues) | **Docs**: [OpenRouter API](https://openrouter.ai/docs)
 
 ---
 *Built with ❤️ for the ESP32 community*
